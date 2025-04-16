@@ -134,4 +134,23 @@ interface Result
      * ```
      */
     public function unwrapOr($default);
+
+    /**
+     * Accumulates contextual data or propagates an Error.
+     *
+     * @param string $field  Key under which the produced value is stored.
+     * @param callable $fn Receives the current success value *plus* any previously accumulated context values and returns a Result.
+     *
+     * @return Result<T, E>
+     */
+    public function use(string $field, callable $fn): Result;
+
+    /**
+     * Redefines the main value using the current context and initial value.
+     *
+     * @template U
+     * @param callable(mixed ...$args): U $fn
+     * @return Ok<U, E>
+     */
+    public function mapWith(callable $fn): Result;
 }
