@@ -168,4 +168,14 @@ class Error implements Result
     {
         return $this;
     }
+
+    /**
+     * Doesn't do anything for error
+     * @param callable(T $value): void $fn The function to execute, that doesn't modify the inner value
+     * @return Result<T, E>
+     */
+    public function tap(callable $fn): Result
+    {
+        return $this;
+    }
 }

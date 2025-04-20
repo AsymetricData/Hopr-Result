@@ -153,4 +153,10 @@ interface Result
      * @return Ok<U, E>
      */
     public function mapWith(callable $fn): Result;
+
+    /**
+     * @param callable(T $value): void $fn The function to execute, that doesn't modify the inner value
+     * @return Result<T, E>
+     */
+    public function tap(callable $fn): Result;
 }

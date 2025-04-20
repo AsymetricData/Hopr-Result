@@ -177,4 +177,14 @@ class Ok implements Result
     {
         return sprintf('Ok(%s)', var_export($this->value, true));
     }
+
+    /**
+     * @param callable(T $value): void $fn The function to execute, that doesn't modify the inner value
+     * @return Result<T, E>
+     */
+    public function tap(callable $fn): Result
+    {
+        $fn($this->value);
+        return $this;
+    }
 }
