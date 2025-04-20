@@ -79,7 +79,8 @@ class Ok implements Result
      * Chains a function that extracts a value from the current value/context.
      * The function must return an Ok with a named array of new context values.
      *
-     * @param callable(mixed ...$args): Result<array<string, mixed>, E> $fn
+     * @param string $field Name under which the value is stored
+     * @param callable(mixed ...$args): Result<mixed, E> $fn Callback producing the new value
      * @return Result<T, E>
      */
     #[\Override]

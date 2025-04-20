@@ -147,7 +147,7 @@ class Error implements Result
     #[\Override]
     public function __toString(): string
     {
-        return sprintf('Error(%s)', $this->error);
+        return sprintf('Error(%s)', var_export($this->error));
     }
 
     #[\Override]
@@ -161,10 +161,10 @@ class Error implements Result
      *
      * @template U
      * @param callable(mixed ...$args): U $fn
-     * @return self
+     * @return Result<T, E>
      */
     #[\Override]
-    public function mapWith(callable $fn): self
+    public function mapWith(callable $fn): Result
     {
         return $this;
     }
