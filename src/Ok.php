@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Hopr\Result;
 
 /**
@@ -19,13 +21,20 @@ class Ok implements Result
     private $value;
 
     /**
+     * @var array<string, mixed> Contextual values accumulated via `use`
+     */
+    private array $context = [];
+
+    /**
      * Ok constructor
      *
      * @param T $value The success value
+     * @param array<string, mixed> $context Optional context
      */
-    private function __construct($value)
+    private function __construct(mixed $value, array $context = [])
     {
         $this->value = $value;
+        $this->context = $context;
     }
 
     /**
@@ -35,7 +44,7 @@ class Ok implements Result
      * @param U $value The success value
      * @return Ok<U, mixed> A new Ok instance
      */
-    public static function of($value): Ok
+    public static function of(mixed $value): Ok
     {
         return new self($value);
     }
@@ -47,9 +56,10 @@ class Ok implements Result
      * @param callable(T): U $fn
      * @return Ok<U, E>
      */
+    #[\Override]
     public function map(callable $fn): Result
     {
-        return new self($fn($this->value));
+        return new self($fn($this->value), $this->context);
     }
 
     /**
@@ -59,9 +69,47 @@ class Ok implements Result
      * @param callable(T): Result<U, E> $fn
      * @return Result<U, E>
      */
+    #[\Override]
     public function bind(callable $fn): Result
     {
         return $fn($this->value);
+    }
+
+    /**
+     * Chains a function that extracts a value from the current value/context.
+     * The function must return an Ok with a named array of new context values.
+     *
+     * @param string $field Name under which the value is stored
+     * @param callable(mixed ...$args): Result<mixed, E> $fn Callback producing the new value
+     * @return Result<T, E>
+     */
+    #[\Override]
+    public function use(string $field, callable $fn): Result
+    {
+        $result = $fn($this->value, ...array_values($this->context));
+
+        if ($result instanceof Error) {
+            return $result;
+        }
+
+        $newContext = $this->context;
+        $newContext[$field] = $result->unwrap();
+
+        return new self($this->value, $newContext);
+    }
+
+    /**
+     * Redefines the main value using the current context and initial value.
+     *
+     * @template U
+     * @param callable(mixed ...$args): U $fn
+     * @return Ok<U, E>
+     */
+    #[\Override]
+    public function mapWith(callable $fn): Result
+    {
+        $args = [$this->value, ...array_values($this->context)];
+        return new self($fn(...$args), $this->context);
     }
 
     /**
@@ -71,15 +119,16 @@ class Ok implements Result
      * @param callable(E): F $fn
      * @return Ok<T, F>
      */
+    #[\Override]
     public function mapErr(callable $fn): Result
     {
-        // No error to map, so return unchanged
         return $this;
     }
 
     /**
      * {@inheritdoc}
      */
+    #[\Override]
     public function isOk(): bool
     {
         return true;
@@ -88,6 +137,7 @@ class Ok implements Result
     /**
      * {@inheritdoc}
      */
+    #[\Override]
     public function isErr(): bool
     {
         return false;
@@ -98,7 +148,8 @@ class Ok implements Result
      *
      * @return T
      */
-    public function unwrap()
+    #[\Override]
+    public function unwrap(): mixed
     {
         return $this->value;
     }
@@ -108,9 +159,10 @@ class Ok implements Result
      *
      * @template D
      * @param D $default
-     * @return T The success value (default is ignored)
+     * @return T
      */
-    public function unwrapOr($default)
+    #[\Override]
+    public function unwrapOr($default): mixed
     {
         return $this->value;
     }
@@ -120,8 +172,19 @@ class Ok implements Result
      *
      * @return string
      */
+    #[\Override]
     public function __toString(): string
     {
-        return sprintf('Ok(%s)', $this->value);
+        return sprintf('Ok(%s)', var_export($this->value, true));
+    }
+
+    /**
+     * @param callable(T $value): void $fn The function to execute, that doesn't modify the inner value
+     * @return Result<T, E>
+     */
+    public function tap(callable $fn): Result
+    {
+        $fn($this->value);
+        return $this;
     }
 }

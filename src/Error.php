@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Hopr\Result;
 
 /**
@@ -23,7 +25,7 @@ class Error implements Result
      *
      * @param E $error The error value
      */
-    private function __construct($error)
+    private function __construct(mixed $error)
     {
         $this->error = $error;
     }
@@ -35,7 +37,7 @@ class Error implements Result
      * @param F $error The error value
      * @return Error<mixed, F> A new Error instance
      */
-    public static function of($error): Error
+    public static function of(mixed $error): Error
     {
         return new self($error);
     }
@@ -47,6 +49,7 @@ class Error implements Result
      * @param callable(T): U $fn
      * @return Error<U, E>
      */
+    #[\Override]
     public function map(callable $fn): Result
     {
         // No success value to map, so return unchanged
@@ -60,6 +63,7 @@ class Error implements Result
      * @param callable(T): Result<U, E> $fn
      * @return Error<U, E>
      */
+    #[\Override]
     public function bind(callable $fn): Result
     {
         // No success value to bind, so return unchanged
@@ -73,6 +77,7 @@ class Error implements Result
      * @param callable(E): F $fn
      * @return Error<T, F>
      */
+    #[\Override]
     public function mapErr(callable $fn): Result
     {
         return new self($fn($this->error));
@@ -81,6 +86,7 @@ class Error implements Result
     /**
      * {@inheritdoc}
      */
+    #[\Override]
     public function isOk(): bool
     {
         return false;
@@ -89,6 +95,7 @@ class Error implements Result
     /**
      * {@inheritdoc}
      */
+    #[\Override]
     public function isErr(): bool
     {
         return true;
@@ -100,9 +107,12 @@ class Error implements Result
      * @return T
      * @throws \RuntimeException
      */
-    public function unwrap()
+    #[\Override]
+    public function unwrap(): string
     {
-        $message = is_string($this->error) ? $this->error : 'Error value encountered in unwrap(). You should check if the Result is ok with isOk() before calling unwrap().';
+        $message = is_string($this->error)
+            ? $this->error
+            : 'Error value encountered in unwrap(). You should check if the Result is ok with isOk() before calling unwrap().';
         throw new \RuntimeException($message);
     }
 
@@ -113,7 +123,8 @@ class Error implements Result
      * @param D $default
      * @return D The default value
      */
-    public function unwrapOr($default)
+    #[\Override]
+    public function unwrapOr($default): mixed
     {
         return $default;
     }
@@ -123,7 +134,7 @@ class Error implements Result
      *
      * @return E The error value
      */
-    public function getError()
+    public function getError(): mixed
     {
         return $this->error;
     }
@@ -133,8 +144,38 @@ class Error implements Result
      *
      * @return string
      */
+    #[\Override]
     public function __toString(): string
     {
-        return sprintf('Error(%s)', $this->error);
+        return sprintf('Error(%s)', var_export($this->error));
+    }
+
+    #[\Override]
+    public function use(string $field, callable $fn): self
+    {
+        return $this;
+    }
+
+    /**
+     * Do nothing, return self
+     *
+     * @template U
+     * @param callable(mixed ...$args): U $fn
+     * @return Result<T, E>
+     */
+    #[\Override]
+    public function mapWith(callable $fn): Result
+    {
+        return $this;
+    }
+
+    /**
+     * Doesn't do anything for error
+     * @param callable(T $value): void $fn The function to execute, that doesn't modify the inner value
+     * @return Result<T, E>
+     */
+    public function tap(callable $fn): Result
+    {
+        return $this;
     }
 }
