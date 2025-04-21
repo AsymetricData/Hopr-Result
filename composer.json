@@ -3,7 +3,6 @@
   "description": "Result type for PHP, as I like it do be.",
   "type": "library",
   "keywords": [
-    "dev",
     "results",
     "monad"
   ],
