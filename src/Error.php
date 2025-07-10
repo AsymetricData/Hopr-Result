@@ -189,4 +189,13 @@ class Error implements Result
         $fn($this->error);
         return $this;
     }
+
+    /**
+     * {@inheritdoc}
+     */
+    #[\Override]
+    public function flatten(): Result
+    {
+        return ($this->value instanceof Error) ? $this->unwrap() : $this;
+    }
 }
