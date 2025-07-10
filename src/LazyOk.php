@@ -5,20 +5,30 @@ declare(strict_types=1);
 namespace Hopr\Result;
 
 /**
- * Class Ok
+ * Class LazyOk
  *
- * Represents a successful result with a value.
+ * Represents a successful result with a lazily evaluated value.
  *
  * @template T The type of the success value
  * @template E The type of the error value (not used in Ok, but needed for interface compatibility)
  * @implements Result<T, E>
  */
-class Ok implements Result
+class LazyOk implements Result
 {
     /**
-     * @var T The success value
+     * @var callable(): T The lazy success value
      */
     private $value;
+
+    /**
+     * @var ?T The evaluated value
+     */
+    private $evaluatedValue = null;
+
+    /**
+     * @var bool Whether the value has been evaluated
+     */
+    private bool $isEvaluated = false;
 
     /**
      * @var array<string, mixed> Contextual values accumulated via `use`
@@ -26,25 +36,25 @@ class Ok implements Result
     private array $context = [];
 
     /**
-     * Ok constructor
+     * LazyOk constructor
      *
-     * @param T $value The success value
+     * @param callable(): T $value The lazy success value
      * @param array<string, mixed> $context Optional context
      */
-    private function __construct(mixed $value, array $context = [])
+    private function __construct(callable $value, array $context = [])
     {
         $this->value = $value;
         $this->context = $context;
     }
 
     /**
-     * Creates a new Ok instance
+     * Creates a new LazyOk instance
      *
      * @template U
-     * @param U $value The success value
-     * @return Ok<U, mixed> A new Ok instance
+     * @param callable(): U $value The lazy success value
+     * @return LazyOk<U, mixed> A new LazyOk instance
      */
-    public static function of(mixed $value): Ok
+    public static function of(callable $value): LazyOk
     {
         return new self($value);
     }
@@ -54,12 +64,12 @@ class Ok implements Result
      *
      * @template U
      * @param callable(T): U $fn
-     * @return Ok<U, E>
+     * @return LazyOk<U, E>
      */
     #[\Override]
     public function map(callable $fn): Result
     {
-        return new self($fn($this->value), $this->context);
+        return new self(fn() => $fn($this->unwrap()), $this->context);
     }
 
     /**
@@ -95,7 +105,7 @@ class Ok implements Result
         $newContext = $this->context;
         $newContext[$field] = $result->unwrap();
 
-        return new self($this->unwrap(), $newContext);
+        return new self(fn() => $this->unwrap(), $newContext);
     }
 
     /**
@@ -103,13 +113,12 @@ class Ok implements Result
      *
      * @template U
      * @param callable(T, mixed ...): U $fn
-     * @return Ok<U, E>
+     * @return LazyOk<U, E>
      */
     #[\Override]
     public function mapWith(callable $fn): Result
     {
-        $args = [$this->unwrap(), ...array_values($this->context)];
-        return new self($fn(...$args), $this->context);
+        return new self(fn() => $fn($this->unwrap(), ...array_values($this->context)), $this->context);
     }
 
     /**
@@ -117,7 +126,7 @@ class Ok implements Result
      *
      * @template F
      * @param callable(E): F $fn
-     * @return Ok<T, F>
+     * @return LazyOk<T, F>
      */
     #[\Override]
     public function mapErr(callable $fn): Result
@@ -151,7 +160,11 @@ class Ok implements Result
     #[\Override]
     public function unwrap(): mixed
     {
-        return $this->value;
+        if (!$this->isEvaluated) {
+            $this->evaluatedValue = ($this->value)();
+            $this->isEvaluated = true;
+        }
+        return $this->evaluatedValue;
     }
 
     /**
@@ -179,14 +192,14 @@ class Ok implements Result
     }
 
     /**
-     * Returns the string representation of the Ok value
+     * Returns the string representation of the LazyOk value
      *
      * @return string
      */
     #[\Override]
     public function __toString(): string
     {
-        return sprintf('Ok(%s)', var_export($this->unwrap(), true));
+        return sprintf('LazyOk(%s)', var_export($this->unwrap(), true));
     }
 
     /**
