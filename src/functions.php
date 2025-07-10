@@ -8,6 +8,18 @@ namespace Hopr\Result;
  * Creates a new Ok result
  *
  * @template T
+ * @param callable(): T $value The success value
+ * @return LazyOk<T, mixed> A new Ok instance
+ */
+function lazyOk(callable $value): LazyOk
+{
+    return LazyOk::of($value);
+}
+
+/**
+ * Creates a new Ok result
+ *
+ * @template T
  * @param T $value The success value
  * @return Ok<T, mixed> A new Ok instance
  *
