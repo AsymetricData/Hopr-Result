@@ -66,27 +66,27 @@ class Ok implements Result
      * {@inheritdoc}
      *
      * @template U
-     * @param callable(T): Result<U, E> $fn
-     * @return Result<U, E>
+     * @template F
+     * @param callable(T): Result<U, F> $fn
+     * @return Result<U, F>
      */
     #[\Override]
     public function bind(callable $fn): Result
     {
-        return $fn($this->value);
+        return $fn($this->unwrap());
     }
 
     /**
-     * Chains a function that extracts a value from the current value/context.
-     * The function must return an Ok with a named array of new context values.
+     * {@inheritdoc}
      *
      * @param string $field Name under which the value is stored
-     * @param callable(mixed ...$args): Result<mixed, E> $fn Callback producing the new value
+     * @param callable(T, mixed ...): Result<mixed, E> $fn Callback producing the new value
      * @return Result<T, E>
      */
     #[\Override]
     public function use(string $field, callable $fn): Result
     {
-        $result = $fn($this->value, ...array_values($this->context));
+        $result = $fn($this->unwrap(), ...array_values($this->context));
 
         if ($result instanceof Error) {
             return $result;
@@ -95,20 +95,20 @@ class Ok implements Result
         $newContext = $this->context;
         $newContext[$field] = $result->unwrap();
 
-        return new self($this->value, $newContext);
+        return new self($this->unwrap(), $newContext);
     }
 
     /**
-     * Redefines the main value using the current context and initial value.
+     * {@inheritdoc}
      *
      * @template U
-     * @param callable(mixed ...$args): U $fn
+     * @param callable(T, mixed ...): U $fn
      * @return Ok<U, E>
      */
     #[\Override]
     public function mapWith(callable $fn): Result
     {
-        $args = [$this->value, ...array_values($this->context)];
+        $args = [$this->unwrap(), ...array_values($this->context)];
         return new self($fn(...$args), $this->context);
     }
 
@@ -164,7 +164,7 @@ class Ok implements Result
     #[\Override]
     public function unwrapOr($default): mixed
     {
-        return $this->value;
+        return $this->unwrap();
     }
 
     /**
@@ -175,16 +175,18 @@ class Ok implements Result
     #[\Override]
     public function __toString(): string
     {
-        return sprintf('Ok(%s)', var_export($this->value, true));
+        return sprintf('Ok(%s)', var_export($this->unwrap(), true));
     }
 
     /**
-     * @param callable(T $value): void $fn The function to execute, that doesn't modify the inner value
+     * {@inheritdoc}
+     *
+     * @param callable(T): void $fn The function to execute, that doesn't modify the inner value
      * @return Result<T, E>
      */
     public function tap(callable $fn): Result
     {
-        $fn($this->value);
+        $fn($this->unwrap());
         return $this;
     }
 }
