@@ -200,4 +200,13 @@ class Ok implements Result
         $fn($this->unwrap());
         return $this;
     }
+
+    /**
+     * {@inheritdoc}
+     */
+    #[\Override]
+    public function flatten(): Result
+    {
+        return $this->value instanceof Ok || $this->value instanceof LazyOk ? $this->unwrap() : $this;
+    }
 }

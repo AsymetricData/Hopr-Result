@@ -106,4 +106,15 @@ interface Result
      * @return Result<T, E>
      */
     public function tap(callable $fn): Result;
+
+    /**
+     * Transforms a nested Result into a flat Result.
+     * For example, it transforms Ok(Ok(value)) into Ok(value),
+     * Err(Err(value)) into Err(value), and Ok(Err(value)) into Err(value).
+     *
+     * @template U
+     * @template F
+     * @return Result<U, F> The flattened Result
+     */
+    public function flatten(): Result;
 }
