@@ -37,7 +37,7 @@ test('Error::getError retourne la valeur d\'erreur', function () {
 
 test('Error::__toString produit une représentation lisible', function () {
     $err = Error::of('erreur');
-    expect((string)$err)->toBe('Error(erreur)');
+    expect((string) $err)->toBe('Error(\'erreur\')');
 });
 
 // Tests pour différents types d'erreurs dans Error
