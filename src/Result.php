@@ -75,6 +75,13 @@ interface Result
     public function unwrapOr($default);
 
     /**
+     * Returns the error value.
+     * On Ok, it do nothing.
+     * @return E
+     */
+    public function getError(): mixed;
+
+    /**
      * Accumulates contextual data or propagates an Error.
      *
      * @param string $field Key under which the produced value is stored.

@@ -168,6 +168,17 @@ class Ok implements Result
     }
 
     /**
+     * {@inheritdoc}
+     *
+     * @return void
+     */
+    #[\Override]
+    public function getError(): mixed
+    {
+        // Nothing
+    }
+
+    /**
      * Returns the string representation of the Ok value
      *
      * @return string
