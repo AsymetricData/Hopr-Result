@@ -60,7 +60,8 @@ class Error implements Result
      * {@inheritdoc}
      *
      * @template U
-     * @param callable(T): Result<U, E> $fn
+     * @template F
+     * @param callable(T): Result<U, F> $fn
      * @return Error<U, E>
      */
     #[\Override]
@@ -108,7 +109,7 @@ class Error implements Result
      * @throws \RuntimeException
      */
     #[\Override]
-    public function unwrap(): string
+    public function unwrap(): mixed
     {
         $message = is_string($this->error)
             ? $this->error
@@ -147,21 +148,28 @@ class Error implements Result
     #[\Override]
     public function __toString(): string
     {
-        return sprintf('Error(%s)', var_export($this->error));
+        return sprintf('Error(%s)', var_export($this->error, true));
     }
 
+    /**
+     * {@inheritdoc}
+     *
+     * @param string $field
+     * @param callable(T, mixed ...): Result<mixed, E> $fn
+     * @return Error<T, E>
+     */
     #[\Override]
-    public function use(string $field, callable $fn): self
+    public function use(string $field, callable $fn): Result
     {
         return $this;
     }
 
     /**
-     * Do nothing, return self
+     * {@inheritdoc}
      *
      * @template U
-     * @param callable(mixed ...$args): U $fn
-     * @return Result<T, E>
+     * @param callable(T, mixed ...): U $fn
+     * @return Error<T, E>
      */
     #[\Override]
     public function mapWith(callable $fn): Result
@@ -170,12 +178,24 @@ class Error implements Result
     }
 
     /**
-     * Doesn't do anything for error
-     * @param callable(T $value): void $fn The function to execute, that doesn't modify the inner value
+     * {@inheritdoc}
+     * Executes the function with the error value for side effects
+     *
+     * @param callable(T): void $fn The function to execute, that doesn't modify the inner value
      * @return Result<T, E>
      */
     public function tap(callable $fn): Result
     {
+        $fn($this->error);
         return $this;
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    #[\Override]
+    public function flatten(): Result
+    {
+        return ($this->value instanceof Error) ? $this->unwrap() : $this;
     }
 }
